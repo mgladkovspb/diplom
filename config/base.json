@@ -1,0 +1,16 @@
+{
+    "base": {
+        "port": "31337"
+    },
+    "session": {
+        "secret": "$2a$10$JmxRGUnk2DcoMFxY4seU3.Qr3G6Y0GP0Y6EUUSbP2m0zcfmmLMk/e",
+        "key": "sid",
+        "resave": false,
+        "saveUninitialized": false,
+        "cookie": {
+            "path": "/",
+            "httpOnly": true,
+            "maxAge": null
+        }
+    }
+}
