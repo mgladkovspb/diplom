@@ -1,5 +1,43 @@
 'use strict';
 
+const fs     = require('fs')
+    , chalk  = require('chalk')
+    , wkx    = require('wkx')
+    , config = require('../config');
+
+class Tracker {
+    constructor(id) {
+        this._id      = id;
+        this._tag     = '[' + this._id + ']';
+        this._points  = [];
+        this._barline = console.draft('');
+
+        this._init();
+    }
+
+    _init() {
+        this._barline(this._tag, chalk.yellow('Загрузка трека...'));
+        fs.readFile('./demo/' + this._id + '.geojson', 'utf8', (error, content) => {
+            if(error)
+                return this._barline(this._tag, chalk.red('Ошибка загрузки трека...'));
+
+            try {
+                let message  = '',
+                geo      = JSON.parse(content),
+                // TODO
+                // поступают 2 типа, linestring b multilinestring. Нужно привести к одному типу.
+                geometry = wkx.Geometry.parseGeoJSON(geo.features[0].geometry);
+
+                this._points = geometry.lineStrings[0].points;
+                message = chalk.green('Загружено ' + this._points.length + ' точек...');
+                this._barline(this._tag, message);
+            } catch(e) {
+                this._barline(this._tag, chalk.red('Ошибка загрузки трека...'));
+            }
+        });
+    }
+}
+
 let trackers = [
     '5cb96bb623d61302f837af3c',
     '5cb96bf20870b9afedeea832',
@@ -52,3 +90,12 @@ let users = [
         ]
     }
 ];
+
+module.exports = () => {
+    let len = trackers.length;
+    console.log(chalk.yellow('* DEMO TRACKERS (%s)'), len);
+    
+    for(let i = 0; i < len; i++) {
+        let tracker = new Tracker(trackers[i]);
+    }
+}

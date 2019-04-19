@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "chalk": "^2.4.2",
+    "draftlog": "^1.0.12",
     "nconf": "^0.10.0",
     "wkx": "^0.4.6"
   }
