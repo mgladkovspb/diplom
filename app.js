@@ -14,3 +14,5 @@ if(config.get('demo') === true) {
     require('./demo')();
 }
 
+process.stdin.resume();
+

@@ -2,15 +2,16 @@
 
 const fs     = require('fs')
     , chalk  = require('chalk')
-    , wkx    = require('wkx')
     , config = require('../config');
 
 class Tracker {
     constructor(id) {
-        this._id      = id;
-        this._tag     = '[' + this._id + ']';
-        this._points  = [];
-        this._barline = console.draft('');
+        this._id       = id;
+        this._tag      = '[' + this._id + ']';
+        this._points   = [];
+        this._barline  = console.draft('');
+        this._index    = 0;
+        this._interval = config.get('data-transfer-period') || 1;
 
         this._init();
     }
@@ -22,19 +23,46 @@ class Tracker {
                 return this._barline(this._tag, chalk.red('Ошибка загрузки трека...'));
 
             try {
-                let message  = '',
-                geo      = JSON.parse(content),
-                // TODO
-                // поступают 2 типа, linestring b multilinestring. Нужно привести к одному типу.
-                geometry = wkx.Geometry.parseGeoJSON(geo.features[0].geometry);
-
-                this._points = geometry.lineStrings[0].points;
+                let message  = '';
+                this._loadpoints(content);
                 message = chalk.green('Загружено ' + this._points.length + ' точек...');
                 this._barline(this._tag, message);
             } catch(e) {
                 this._barline(this._tag, chalk.red('Ошибка загрузки трека...'));
             }
+
+            setInterval(() => { 
+                this._transmit()
+            }, this._interval * 1000);
         });
+    }
+
+    _loadpoints(geojson) {
+        let geometry = JSON.parse(geojson);
+
+        switch(geometry.type) {
+            case 'LineString': 
+                this._points = geometry.coordinates; 
+                break;
+            case 'MultiLineString':
+                for(let i = 0; i < geometry.coordinates.length; i++)
+                    this._points = this._points.concat(geometry.coordinates[i]); 
+                break;
+        }
+    }
+
+    _transmit() {
+        let message  = '';
+
+        if(this._index === this._points.length) {
+            this._index = 0;
+        }
+
+        message = chalk.green('(' + this._index + '/' + this._points.length + ')');
+        message += ' LAT: ' + this._points[this._index][0] + ' LNG: ' + this._points[this._index][1]; 
+        this._barline(this._tag, message);
+
+        this._index++;
     }
 }
 
