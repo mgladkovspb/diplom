@@ -31,9 +31,11 @@ class Tracker {
                 this._barline(this._tag, chalk.red('Ошибка загрузки трека...'));
             }
 
-            setInterval(() => { 
-                this._transmit()
-            }, this._interval * 1000);
+            if(this._points.length > 0) {
+                setInterval(() => { 
+                    this._transmit()
+                }, this._interval * 1000);
+            }
         });
     }
 
