@@ -11,7 +11,7 @@ class Tracker {
         this._points   = [];
         this._barline  = console.draft('');
         this._index    = 0;
-        this._interval = config.get('data-transfer-period') || 1;
+        this._interval = config.get('data-transfer-period') || 0.3;
 
         this._init();
     }
