@@ -8,7 +8,7 @@ const fname        = 'RU-SPE.pbf'
     , Primitives   = require('./lib/osm-parser').Primitives
     , common       = require('./common');
 
-DraftLog.into(console);
+//DraftLog.into(console);
 console.log(chalk.red('База данных пуста. Загрузка и обработка данных OSM ...'));
 
 async function parse(file) {
