@@ -1,6 +1,7 @@
 'use strict';
 
 const path         = require('path')
+    , chalk        = require('chalk')
     , store        = require('./store')
     , config       = require('./config')
     , express      = require('express')
@@ -9,8 +10,8 @@ const path         = require('path')
     , cookieParser = require('cookie-parser')
     , app          = express();
 
-app.use('/js', browserify(__dirname + '/public/js'));
-app.use('/css', browserify(__dirname + '/public/css'));
+app.use('/js',  express.static(__dirname + '/public/js'));
+app.use('/css', express.static(__dirname + '/public/css'));
 app.use('/lib', express.static(path.join(__dirname, './public/lib')));
 
 app.engine('.html', require('ejs').__express);
@@ -23,5 +24,20 @@ app.use(cookieParser());
 app.use(session(config.get('session')));
 
 app.listen(config.get('base:port'), function () {
-  log.info('Сервер запущен. Порт: %s', config.get('base:port'));
+    console.log(
+        chalk.cyan('Сервер запущен. Порт: ') + 
+        ' ' + 
+        chalk.green(config.get('base:port'))
+    );
 });
+
+(async () => {
+    let exists = await store.exists()
+      , empty  = await store.empty();
+
+    if(!exists || empty) {
+        console.log();
+        const child = require('child_process');
+        child.fork(`${__dirname}/load-osm.js`);
+    }
+})();
