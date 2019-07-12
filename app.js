@@ -23,6 +23,8 @@ app.use(bodyParser.json())
 app.use(cookieParser());
 app.use(session(config.get('session')));
 
+require('./routes')(app);
+
 app.listen(config.get('base:port'), function () {
     console.log(
         chalk.cyan('Сервер запущен. Порт: ') + 
@@ -31,6 +33,7 @@ app.listen(config.get('base:port'), function () {
     );
 });
 
+/*
 (async () => {
     let exists = await store.exists()
       , empty  = await store.empty();
@@ -41,3 +44,4 @@ app.listen(config.get('base:port'), function () {
         child.fork(`${__dirname}/load-osm.js`);
     }
 })();
+*/

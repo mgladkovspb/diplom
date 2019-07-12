@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/lib/leaflet/leaflet.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="map"></div>
+    <div class="map-control map-control-tr btn-group shadow">
+        <input class="btn" type="button" value="+" onclick="zoomIn();"/>
+        <input class="btn" type="button" value="-" onclick="zoomOut();"/>
+    </div>
+    <div class="map-control map-control-tl sidebar shadow">
+        <div class="sidebar-header">
+            <h3 id="state" class="text-red">Строю граф...</h3>
+        </div>
+        <label class="container text-white">Показать вершины
+            <input type="checkbox" name="vertices">
+            <span class="checkmark"></span>
+        </label>
+        <label class="container text-white">Показать рёбра
+            <input type="checkbox" name="vertices">
+            <span class="checkmark"></span>
+        </label>
+    </div>
+    <script src="/lib/jquery/jquery.min.js"></script>
+    <script src="/lib/leaflet/leaflet-src.js"></script>
+    <script src="/js/index.js"></script>
+</body>
+</html>

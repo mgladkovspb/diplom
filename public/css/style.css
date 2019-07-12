@@ -1,0 +1,130 @@
+@import url("map.css");
+
+html,
+body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+    font-size: 15px;
+    font-weight: 400;
+    font-family: 'Lato', 'Open Sans', Helvetica, sans-serif;
+}
+
+.btn {
+    display: inline-block;
+    background-color: #ecedee;
+    border: none;
+    margin-bottom: 10px;
+    margin-right: 10px;
+    padding: 9px 24px 8px;
+    vertical-align: middle;
+    border-radius: 2px;
+}
+
+/* цвета */
+.text-blue {
+    color: #2980b9;
+}
+
+.text-red {
+    color: #e73c3c;
+}
+
+.text-green {
+    color: #2ecc71;
+}
+
+.text-yellow {
+    color: #e67e22;
+}
+
+.text-gray {
+    color: #5b6464;
+}
+
+.text-white {
+    color: #ecedee;
+}
+
+.shadow {
+    box-shadow: 2px 1px 5px -2px rgba(0, 0, 0, 0.75);
+}
+
+.sidebar {
+    width: 300px;
+    /*background-color: #ecedee;*/
+    background-color: #2c3e50;
+    padding: 14px 20px 8px;
+}
+
+.sidebar-header {}
+.sidebar-header > h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+}
+
+.disabled {
+    
+}
+
+.container {
+    display: block;
+    position: relative;
+    padding-left: 35px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    line-height: 22px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 20px;
+    width: 20px;
+    background-color: #ecedee;
+}
+
+.container:hover input~.checkmark {
+    background-color: #ecedee;
+}
+
+.container input:checked~.checkmark {
+    background-color: #2980b9;
+}
+
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.container input:checked~.checkmark:after {
+    display: block;
+}
+
+.container .checkmark:after {
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
