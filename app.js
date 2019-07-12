@@ -10,6 +10,8 @@ const path         = require('path')
     , cookieParser = require('cookie-parser')
     , app          = express();
 
+DraftLog(console);
+
 app.use('/js',  express.static(__dirname + '/public/js'));
 app.use('/css', express.static(__dirname + '/public/css'));
 app.use('/lib', express.static(path.join(__dirname, './public/lib')));
@@ -33,7 +35,6 @@ app.listen(config.get('base:port'), function () {
     );
 });
 
-/*
 (async () => {
     let exists = await store.exists()
       , empty  = await store.empty();
@@ -44,4 +45,3 @@ app.listen(config.get('base:port'), function () {
         child.fork(`${__dirname}/load-osm.js`);
     }
 })();
-*/

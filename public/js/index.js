@@ -2,6 +2,16 @@
 
 let osmmap;
 
+function requestReadyState() {
+    $.ajax({
+        type: "POST",
+        url: url,
+        data: data,
+        success: success,
+        dataType: dataType
+    });
+}
+
 function createMap() {
     osmmap = L.map('map', {
         zoomControl: false,
@@ -27,4 +37,5 @@ function zoomOut() {
 
 document.addEventListener('DOMContentLoaded', function() {
     createMap();
+    requestReadyState();
 }, false);
