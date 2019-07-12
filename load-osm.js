@@ -11,7 +11,7 @@ const DraftLog     = require('draftlog')
 DraftLog(console);
 console.log(chalk.red('База данных пуста. Загрузка и обработка данных OSM ...'));
 
-function parse(file) {
+function parse(message, file) {
     return new Promise((resolve, reject) => {
         let barLine = console.draft()
           , parser  = new OsmPbfParser()
@@ -20,10 +20,10 @@ function parse(file) {
 
         reader.pipe(parser).pipe(prim);
 
-        let n = 0, w = 0, r = 0, prefix = 'Обработка данных osm: ';
+        let n = 0, w = 0, r = 0;
 
         function progress() {
-            barLine(chalk.yellow(prefix + n + '/' + w + '/' + r));
+            barLine(message + chalk.yellow(n + '/' + w + '/' + r));
         }
 
         prim.on('node', (node) => {
@@ -38,8 +38,8 @@ function parse(file) {
             r += relation.length; progress();
         });
 
-        prim.on('exit', () => {
-            barLine(prefix + n + '/' + w + '/' + r + '. Готово!');
+        prim.on('finish', () => {
+            barLine(message + chalk.yellow(n + '/' + w + '/' + r) + chalk.green('. Готово!'));
             resolve();
         });
     });
@@ -49,11 +49,15 @@ function parse(file) {
     let file = __dirname + '/' + fname;
 
     try {
-        console.log(chalk.yellow('Начали!'));
-        await common.download('https://needgeo.com/data/current/region/RU/RU-SPE.pbf', file);
-        await parse(file);
-        console.log(chalk.green('Готово!'));
-        console.log(chalk.green('Готово!'));
+        await common.download(
+            ' > ' + chalk.cyan('Загрузка '), 
+            'https://needgeo.com/data/current/region/RU/RU-SPE.pbf', 
+            file
+        );
+        await parse(
+            ' > ' + chalk.cyan('Обработка данных osm '), 
+            file
+        );
         console.log(chalk.green('Готово!'));
     } catch(error) {
         console.log(error.message);
