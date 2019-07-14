@@ -37,55 +37,45 @@ function parse(message, file) {
 
         reader.pipe(parser).pipe(prim);
 
-        let n = 0, w = 0, r = 0;
+        function progress() {
+            barLine(message + chalk.yellow(nodes.size + '/' + ways.size + '/' + r));
+        }
 
         prim.on('node', (node) => {
-            prim.pause();
-            let ops = [];
-            node.forEach(item => {
-                ops.push({
-                    updateOne: {
-                        filter: { _id: item.id },
-                        update: {
-                            $set: { 
-                                vertice: false, 
-                                geom: {
-                                    type: 'point',
-                                    coordinates: [item.lon, item.lat], 
-                                } 
-                            }
-                        },
-                        upsert: true
+            //prim.pause();
+            node.reduce((output, current) => {
+                nodes.set(current.id, {
+                    _id  : current.id,
+                    vertice: false,
+                    geom : {
+                        type: 'point',
+                        coordinates: [current.lon, current.lat], 
                     }
                 });
-            });
-            n += node.length;
-            barLine(' > ' + chalk.cyan('Запись точек: ') + chalk.yellow(n));
-            prim.resume();
+                return output;
+            }, nodes); 
+
+            progress();
+            //prim.resume();
         });
 
         prim.on('way', (way) => {
-            prim.pause();
-            let ops = [];
-            way.forEach(item => {
-                ops.push({
-                    updateOne: {
-                        filter: { _id: item.id },
-                        update: {
-                            $set: { refs: item.refs }
-                        },
-                        upsert: true
-                    }
-                });
-            });
-            w += node.length;
-            barLine(' > ' + chalk.cyan('Запись линий: ') + chalk.yellow(w));
-            prim.resume();
+            //prim.pause();
+            way.reduce((output, current) => {
+                if(roads[current.tags.highway] !== undefined)
+                    output.set(current.id, { 
+                        _id  : current.id,
+                        refs : current.refs 
+                    });
+                return output;
+            }, ways);
+
+            progress();
+            //prim.resume();
         });
 
         prim.on('relation', (relation) => {
-            r += relation.length;
-            barLine(' > ' + chalk.cyan('Обработка связей: ') + chalk.yellow(r));
+            r += relation.length; progress();
         });
 
         prim.on('finish', () => {
