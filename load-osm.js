@@ -1,16 +1,16 @@
 'use strict';
 
 const DraftLog     = require('draftlog')
-    , mongoClient  = require('mongodb').MongoClient
-    , fname        = 'RU-SPE.pbf'
     , chalk        = require('chalk')
     , fs           = require('fs')
     , OsmPbfParser = require('./lib/osm-parser').OsmPbfParser
     , Primitives   = require('./lib/osm-parser').Primitives
-    , common       = require('./common');
+    , store        = require('./store')
+    , common       = require('./common')
+    , fname        = 'RU-SPE.pbf';
 
 DraftLog(console);
-console.log(chalk.red('База данных пуста. Загрузка и обработка данных OSM ...'));
+console.log(chalk.red('Загрузка и обработка данных OSM ...'));
 
 const roads = {
     motorway: '',
@@ -26,11 +26,12 @@ const roads = {
     tertiary_link: ''
 }
 
-let nodes = new Map(), ways = new Map(), r = 0;
-
-function parse(message, file) {
+function parse(file) {
     return new Promise((resolve, reject) => {
-        let barLine = console.draft()
+        let statusLine = console.draft()
+          , nodeLine
+          , wayLine
+          , rLine
           , parser  = new OsmPbfParser()
           , prim    = new Primitives()
           , reader  = fs.createReadStream(file);
@@ -39,176 +40,65 @@ function parse(message, file) {
 
         let n = 0, w = 0, r = 0;
 
-        prim.on('node', (node) => {
+        statusLine('* ' + chalk.cyan('Обработка данных OSM...') + chalk.yellow(' Выполнение.'));
+
+        prim.on('node', async (node) => {
+            let data = [];
+
             prim.pause();
-            let ops = [];
+            if(nodeLine === undefined)
+                nodeLine = console.draft();
+
             node.forEach(item => {
-                ops.push({
-                    updateOne: {
-                        filter: { _id: item.id },
-                        update: {
-                            $set: { 
-                                vertice: false, 
-                                geom: {
-                                    type: 'point',
-                                    coordinates: [item.lon, item.lat], 
-                                } 
-                            }
-                        },
-                        upsert: true
+                data.push({
+                    _id: item.id,
+                    vertice: false,
+                    geom: {
+                        type: 'point',
+                        coordinates: [item.lon, item.lat], 
                     }
                 });
             });
+
+            store.writeNodes(data);
+
             n += node.length;
-            barLine(' > ' + chalk.cyan('Запись точек: ') + chalk.yellow(n));
+            nodeLine('  > ' + chalk.yellow('Запись точек: ') + chalk.green(n));
             prim.resume();
         });
 
-        prim.on('way', (way) => {
+        prim.on('way', async (way) => {
+            let data = [];
             prim.pause();
-            let ops = [];
+            if(wayLine === undefined)
+                wayLine = console.draft();
+
             way.forEach(item => {
-                ops.push({
-                    updateOne: {
-                        filter: { _id: item.id },
-                        update: {
-                            $set: { refs: item.refs }
-                        },
-                        upsert: true
-                    }
+                if(roads[item.tags.highway] === undefined)
+                    return;
+
+                data.push({
+                    _id: item.id,
+                    refs : item.refs
                 });
             });
-            w += node.length;
-            barLine(' > ' + chalk.cyan('Запись линий: ') + chalk.yellow(w));
+            
+            store.writeWays(data);
+            
+            w += data.length
+            wayLine('  > ' + chalk.yellow('Запись линий: ') + chalk.green(w));
             prim.resume();
         });
 
-        prim.on('relation', (relation) => {
+        prim.on('relation', async (relation) => {
+            if(rLine === undefined)
+                rLine = console.draft();
             r += relation.length;
-            barLine(' > ' + chalk.cyan('Обработка связей: ') + chalk.yellow(r));
+            rLine('  > ' + chalk.yellow('Обработка связей: ') + chalk.green(r));
         });
 
         prim.on('finish', () => {
-            barLine(message + chalk.yellow(nodes.size + '/' + ways.size + '/' + r) + chalk.green('. Готово!'));
-            resolve();
-        });
-    });
-}
-
-function markPointAsVertice() {
-    let vertices = 0
-      , barLine  = console.draft();
-
-    ways.forEach(function(value, key) {
-        let pt = nodes.get(value.refs[0]);
-        if(pt !== undefined) {
-            pt.vertice = true;
-            vertices++;
-        }
-        barLine(' > ' + chalk.cyan('Подготовка вершин: ') + chalk.yellow(vertices));
-    });
-}
-
-async function writeToDataBase(collection, data, size = 1000) {
-    let barLine = console.draft('');
-
-    try { await collection.deleteMany({}, { justOne: false }); } catch(e) {}
-    while(data.length > 0) {
-        try {
-            barLine(chalk.cyan('   * ') + chalk.blue('Запись данных: ') + chalk.yellow(data.length));
-            await collection.insertMany(data);
-        } catch(error) {
-            console.log(error);
-        }
-    }
-}
-
-async function writePoints(db) {
-    let barLine    = console.draft('')
-      , count      = 0
-      , collection = db.collection('nodes');
-
-    barLine(' > ' + chalk.red('Очистка таблицы...'));
-    try { await collection.deleteMany({}, { justOne: false }); } catch(e) {}
-    //await writeToDataBase(collection, Array.from(nodes.values()));
-    
-    let ops = [];
-    nodes.forEach(node => {
-        ops.push(
-            {
-                updateOne: {
-                    filter: { _id: node._id },
-                    update: {
-                        $set: { vertice: node.vertice, geom: node.geom }
-                    },
-                    upsert: true
-                }
-            }
-        )
-        count++;
-        barLine(' > ' + chalk.cyan('Подготовка точек: ') + chalk.yellow(count));
-    })
-    
-    barLine(' > ' + chalk.red('Запись точек... ') + chalk.yellow(count));
-    collection.bulkWrite(ops, { ordered: false });
-
-    
-    
-    
-    // for (let value of nodes.values()) {
-    //     collection.insert(value);
-    //     count++;
-    //     barLine(' > ' + chalk.cyan('Запись точек: ') + chalk.yellow(count));
-    // }
-}
-
-async function writeWays(db) {
-    let barLine    = console.draft('')
-      , count = 0
-      , collection = db.collection('ways');
-
-    // barLine(' > ' + chalk.cyan('Запись линий...'));
-    // await writeToDataBase(collection, Array.from(ways.values()));
-
-    let ops = [];
-    ways.forEach(node => {
-        ops.push(
-            {
-                updateOne: {
-                    filter: { _id: node._id },
-                    update: {
-                        $set: { refs: node.refs }
-                    },
-                    upsert: true
-                }
-            }
-        )
-        count++;
-        barLine(' > ' + chalk.cyan('Подготовка линий: ') + chalk.yellow(count));
-    })
-    
-    barLine(' > ' + chalk.red('Запись линий... ') + chalk.yellow(count));
-    collection.bulkWrite(ops, { ordered: false });
-
-}
-
-function saveData() {
-    return new Promise((resolve, reject) => {
-        let barLine = console.draft('')
-          , url     = 'mongodb://localhost:27017';
-
-        barLine(chalk.green('Запись данных в локальную базу...'));
-        mongoClient.connect(url, { useNewUrlParser: true }, async (error, client) => {
-            if (error) {
-                return reject(error);
-            }
-
-            let db = client.db('routing');
-
-            //await writePoints(db);
-            await writeWays(db);
-
-            client.close();
+            statusLine('* ' + chalk.cyan('Обработка данных OSM...') + chalk.green(' Ok.'));
             resolve();
         });
     });
@@ -219,16 +109,16 @@ function saveData() {
 
     try {
         // await common.download(
-        //     ' > ' + chalk.cyan('Загрузка '), 
+        //     '* ' + chalk.cyan('Загрузка '), 
         //     'https://needgeo.com/data/current/region/RU/RU-SPE.pbf', 
         //     file
         // );
-        await parse(
-            ' > ' + chalk.cyan('Обработка данных osm '), 
-            file
-        );
-        //markPointAsVertice();
-        await saveData();
+
+        await store.connect();
+        await store.clean();
+        await parse(file);
+        await store.buildVertices();
+        await store.close();
         console.log(chalk.green('Готово!'));
     } catch(error) {
         console.log(error.message);
