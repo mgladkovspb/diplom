@@ -1,6 +1,7 @@
 'use strict';
 
 const path         = require('path')
+    , DraftLog     = require('draftlog')
     , chalk        = require('chalk')
     , store        = require('./store')
     , config       = require('./config')
@@ -9,8 +10,6 @@ const path         = require('path')
     , bodyParser   = require('body-parser')
     , cookieParser = require('cookie-parser')
     , app          = express();
-
-DraftLog(console);
 
 app.use('/js',  express.static(__dirname + '/public/js'));
 app.use('/css', express.static(__dirname + '/public/css'));
@@ -43,5 +42,8 @@ app.listen(config.get('base:port'), function () {
         console.log();
         const child = require('child_process');
         child.fork(`${__dirname}/load-osm.js`);
+    } else {
+        DraftLog(console);
+        store.connect();
     }
 })();

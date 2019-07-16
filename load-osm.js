@@ -52,9 +52,10 @@ function parse(file) {
             node.forEach(item => {
                 data.push({
                     _id: item.id,
+                    type: 'Feature',
                     vertice: false,
-                    geom: {
-                        type: 'point',
+                    geometry: {
+                        type: 'Point',
                         coordinates: [item.lon, item.lat], 
                     }
                 });

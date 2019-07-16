@@ -49,42 +49,20 @@ async function clean() {
 }
 
 async function exists() {
-    return false;
-}
-
-async function empty() {
     return true;
 }
 
+async function empty() {
+    return false;
+}
+
 async function writeNodes(data) {
-    let collection = db.collection('nodes')
-      , ops        = [];
-    // data.forEach(item => {
-    //     ops.push({
-    //         updateOne: {
-    //             filter: { _id: item.id },
-    //             update: { $set: { vertice: item.vertice, geom: item.geom } },
-    //             upsert: true
-    //         }
-    //     });
-    // });
-    // await collection.bulkWrite(ops, { ordered: false });
+    let collection = db.collection('nodes');
     await collection.insertMany(data);
 } 
 
 async function writeWays(data) {
-    let collection = db.collection('ways')
-      , ops        = [];
-    // data.forEach(item => {
-    //     ops.push({
-    //         updateOne: {
-    //             filter: { _id: item.id },
-    //             update: { $set: { refs: item.refs } },
-    //             upsert: true
-    //         }
-    //     });
-    // });
-    // await collection.bulkWrite(ops, { ordered: false });
+    let collection = db.collection('ways');
     await collection.insertMany(data);
 }
 
@@ -93,33 +71,28 @@ async function buildVertices() {
       , nodes   = db.collection('nodes')
       , count   = 0
       , barLine = console.draft()
-      , ops     = [];
+      , ids     = [];
 
     barLine('  > ' + chalk.yellow('Обработка вершин: ') + chalk.green(count));
-    let ids = [];
-    //let v = await ways.aggregate([{$project:{vertice:{$arrayElemAt:['$refs', 0]}}}]).toArray();
     await ways.find({}).forEach(item => {
-        // ops.push({
-        //     updateOne: {
-        //         filter: { _id: item.refs[0] },
-        //         update: { $set: { vertice: true } },
-        //     }
-        // });
         ids.push(item.refs[0]);
         barLine('  > ' + chalk.yellow('Обработка вершин: ') + chalk.green(++count));
     });
 
-    nodes.updateMany({ _id : { $in : ids } }, { $set: { vertice: true } });
-    
-    //console.log(await nodes.find({ _id : { $in : ids } }).count());
-    //await nodes.bulkWrite(ops, { ordered: false });
+    await nodes.updateMany({ _id : { $in : ids } }, { $set: { vertice: true } });
 }
 
-module.exports.writeNodes = writeNodes;
-module.exports.writeWays  = writeWays;
+async function getVertices() {
+    let nodes = db.collection('nodes');
+    return await nodes.find({ vertice: true }).toArray();
+}
+
+module.exports.writeNodes    = writeNodes;
+module.exports.writeWays     = writeWays;
 module.exports.buildVertices = buildVertices;
-module.exports.connect    = connect;
-module.exports.clean      = clean;
-module.exports.close      = close;
-module.exports.exists     = exists;
-module.exports.empty      = empty;
+module.exports.getVertices   = getVertices;
+module.exports.connect       = connect;
+module.exports.clean         = clean;
+module.exports.close         = close;
+module.exports.exists        = exists;
+module.exports.empty         = empty;

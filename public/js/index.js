@@ -1,6 +1,6 @@
 'use strict';
 
-let osmmap;
+let osmmap, verticesLayer, edgesLayer;
 
 function requestReadyState() {
     $.ajax({
@@ -35,7 +35,45 @@ function zoomOut() {
     );
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+function loadVertices(data) {
+    let features = JSON.parse(data);
+
+    verticesLayer = L.geoJSON(features, {
+        style: function (feature) {
+            return feature.properties && feature.properties.style;
+        },
+
+        pointToLayer: function (feature, latlng) {
+            return L.circleMarker(latlng, {
+                radius: 4,
+                fillColor: "#ff7800",
+                color: "#000",
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            });
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
     createMap();
-    requestReadyState();
+    $('input[name="vertices"]').on('click', (e) => {
+        if(e.target.checked) {
+            if(verticesLayer === undefined) {
+                $.get('/api/vertices', (data) => { 
+                    loadVertices(data);
+                    verticesLayer.addTo(osmmap);
+                });
+            } else {
+                verticesLayer.addTo(osmmap);
+            }
+        } else {
+            osmmap.removeLayer(verticesLayer);
+        }
+    });
+
+    $('input[name="edges"]').on('click', (e) => {
+        console.log('edges');
+    });
 }, false);
