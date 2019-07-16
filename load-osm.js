@@ -109,19 +109,32 @@ function parse(file) {
     let file = __dirname + '/' + fname;
 
     try {
-        // await common.download(
-        //     '* ' + chalk.cyan('Загрузка '), 
-        //     'https://needgeo.com/data/current/region/RU/RU-SPE.pbf', 
-        //     file
-        // );
+        await common.download(
+            '* ' + chalk.cyan('Загрузка '), 
+            'https://needgeo.com/data/current/region/RU/RU-SPE.pbf', 
+            file
+        );
 
         await store.connect();
         await store.clean();
         await parse(file);
         await store.buildVertices();
-        await store.close();
+        if(!module.parent)
+            await store.close();
         console.log(chalk.green('Готово!'));
     } catch(error) {
         console.log(error.message);
     }
 })();
+
+// запросы для построения графа
+
+/* 
+выбрать все документы с последним элементом массива
+db.ways.find({}, { refs: {$slice: -1}});
+*/
+
+/* 
+выбрать все документы, где первый элемент массива равен значению
+db.ways.find({ 'refs.0': 230424 });
+*/
