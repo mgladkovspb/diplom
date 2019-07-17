@@ -1,7 +1,6 @@
 'use strict';
 
-const createGraph  = require('ngraph.graph')
-    , chalk        = require('chalk')
+const chalk        = require('chalk')
     , fs           = require('fs')
     , OsmPbfParser = require('./lib/osm-parser').OsmPbfParser
     , Primitives   = require('./lib/osm-parser').Primitives
@@ -29,7 +28,7 @@ let nodes = new Map()
   , ways  = new Map()
   , osm   = new Map()
   , r     = 0
-  , graph;
+  , graph = [];
 
 function parse(file) {
     return new Promise((resolve, reject) => {
@@ -88,13 +87,13 @@ function getPointAsGeoJSON(id) {
         type: "Feature",
         geometry: {
             type: "Point", 
-            coordinates: pt
+            coordinates: [...pt]
         }
     }
 }
 
 function getPointAsCoord(id) {
-    return nodes.get(id);
+    return [...nodes.get(id)];
 }
 
 function buildOsmData() {
@@ -106,6 +105,7 @@ function buildOsmData() {
         let obj = {
             _id: key,
             vertice: getPointAsGeoJSON(refs[0]),
+            neighbors: [],
             line: {
                 type: "Feature",
                 geometry: {
@@ -127,35 +127,33 @@ function buildOsmData() {
 
         osm.set(key, obj);
     });
+
+    // Очистить точки, линии. Сырые данные больше не нужны.
+    nodes.clear();
+    ways.clear();
+
+    console.log('  > ' + chalk.yellow('Поиск соседей.'));
+    for(let obj of osm.values()) {
+        obj.neighbors = neighbors(obj.points.last);
+    };
+
+    console.log('  > ' + chalk.yellow('Подготовка графа.'));
+    for(let obj of osm.values())
+        for(let i = 0; i < obj.neighbors.length; i++)
+            graph.push({
+                from: obj._id, 
+                to: obj.neighbors[i], 
+                data: { weight: 1 }
+            });
 }
 
-async function buildGraph() {
-    let statusLine = console.draft()
-      , barLine = console.draft()
-      , graph   = createGraph()
-      , ending  = [];
-
-    statusLine('* ' + chalk.cyan('Построение графа...') + chalk.yellow('Выполнение.'));
-    ending = await store.wayEnding();
-    for(let i = 0; i < ending.length; i++) {
-        let item = ending[i]
-          , ways = await store.wayIntersections(item.refs[0]);
-        
-        ways.forEach(way => {
-            graph.addLink(item._id, way._id, { weight: 1 });
-        });
-        barLine('  > ' + chalk.yellow('Обработка линий: ') + chalk.green(i));
-    };
-    statusLine('* ' + chalk.cyan('Построение графа...') + chalk.green(' Ok.'));
-
-    graph.forEachLink(function(link) {
-        console.dir(link);
+function neighbors(point) {
+    let result = [];
+    osm.forEach((obj, key) => {
+        if(obj.points.first === point)
+            result.push(key);
     });
-
-    // let path = require('ngraph.path');
-    // let pathFinder = path.aStar(graph);
-    // let foundPath = pathFinder.find(49706057, 4454689);
-    // console.log('%o', foundPath);
+    return result;
 }
 
 (async () => {
@@ -168,14 +166,17 @@ async function buildGraph() {
             file
         );
 
-        //await store.connect();
-        // await store.clean();
+        await store.connect();
+        await store.clean();
         await parse(file);
         buildOsmData();
-        // await store.buildVertices();
-        //await buildGraph();
-        // if(!module.parent)
-        //     await store.close();
+        console.log('* ' + chalk.cyan('Запись в базу данных.'));
+        console.log('  > ' + chalk.yellow('Osm.'));
+        await store.writeOsm(Array.from(osm.values()));
+        console.log('  > ' + chalk.yellow('Граф.'));
+        await store.writeGraph(graph);
+        if(!module.parent)
+            await store.close();
         console.log(chalk.green('Готово!'));
     } catch(error) {
         console.log(error.message);

@@ -41,26 +41,30 @@ async function clean() {
     }
 }
 
-async function exists() {
-    return true;
-}
-
 async function empty() {
-    return false;
+    let collection = db.collection('graph');
+    return await collection.find({}).count() === 0;
 }
 
-function writeOsm(data) {
-
+async function writeOsm(data) {
+    let collection = db.collection('osm');
+    await collection.insertMany(data);
 }
 
-function writeGraph(data) {
+async function writeGraph(data) {
+    let collection = db.collection('graph');
+    await collection.insertMany(data);
+}
 
+function getGraph() {
+    let collection = db.collection('graph');
+    return collection.find({});
 }
 
 module.exports.writeOsm   = writeOsm;
 module.exports.writeGraph = writeGraph;
+module.exports.getGraph   = getGraph;
 module.exports.connect    = connect;
 module.exports.clean      = clean;
 module.exports.close      = close;
-module.exports.exists     = exists;
 module.exports.empty      = empty;

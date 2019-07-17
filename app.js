@@ -35,10 +35,9 @@ app.listen(config.get('base:port'), function () {
 });
 
 (async () => {
-    let exists = await store.exists()
-      , empty  = await store.empty();
+    let empty  = await store.empty();
 
-    if(!exists || empty) {
+    if(empty) {
         console.log();
         const child = require('child_process');
         child.fork(`${__dirname}/load-osm.js`);
