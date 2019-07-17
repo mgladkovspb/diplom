@@ -1,6 +1,7 @@
 'use strict';
 
-const createGraph  = require('ngraph.graph')
+const DraftLog     = require('draftlog')
+    , createGraph  = require('ngraph.graph')
     , chalk        = require('chalk')
     , fs           = require('fs')
     , OsmPbfParser = require('./lib/osm-parser').OsmPbfParser
@@ -9,6 +10,7 @@ const createGraph  = require('ngraph.graph')
     , common       = require('./common')
     , fname        = 'RU-SPE.pbf';
 
+DraftLog(console);
 console.log(chalk.red('Загрузка и обработка данных OSM ...'));
 
 const roads = {
@@ -25,107 +27,82 @@ const roads = {
     tertiary_link: ''
 }
 
-let nodes = new Map()
-  , ways  = new Map()
-  , osm   = new Map()
-  , r     = 0
-  , graph;
-
 function parse(file) {
     return new Promise((resolve, reject) => {
-        let parser  = new OsmPbfParser()
+        let statusLine = console.draft()
+          , nodeLine
+          , wayLine
+          , rLine
+          , parser  = new OsmPbfParser()
           , prim    = new Primitives()
           , reader  = fs.createReadStream(file);
 
         reader.pipe(parser).pipe(prim);
 
-        console.log('* ' + chalk.cyan('Обработка данных OSM.'));
+        let n = 0, w = 0, r = 0;
+
+        statusLine('* ' + chalk.cyan('Обработка данных OSM...') + chalk.yellow(' Выполнение.'));
 
         prim.on('node', async (node) => {
-            prim.pause();
+            let data = [];
 
-            if(nodes.size === 0)
-                console.log('  > ' + chalk.yellow('Точки.'));
+            prim.pause();
+            if(nodeLine === undefined)
+                nodeLine = console.draft();
 
             node.forEach(item => {
-                nodes.set(item.id, [item.lon, item.lat]);
-            }); 
+                data.push({
+                    _id: item.id,
+                    type: 'Feature',
+                    vertice: false,
+                    geometry: {
+                        type: 'Point',
+                        coordinates: [item.lon, item.lat], 
+                    }
+                });
+            });
 
+            store.writeNodes(data);
+
+            n += node.length;
+            nodeLine('  > ' + chalk.yellow('Запись точек: ') + chalk.green(n));
             prim.resume();
         });
 
         prim.on('way', async (way) => {
+            let data = [];
             prim.pause();
-            
-            if(ways.size === 0)
-                console.log('  > ' + chalk.yellow('Линии.'));
+            if(wayLine === undefined)
+                wayLine = console.draft();
 
             way.forEach(item => {
                 if(roads[item.tags.highway] === undefined)
                     return;
-                ways.set(item.id, item.refs);
-            });
 
+                data.push({
+                    _id: item.id,
+                    refs : item.refs
+                });
+            });
+            
+            store.writeWays(data);
+            
+            w += data.length
+            wayLine('  > ' + chalk.yellow('Запись линий: ') + chalk.green(w));
             prim.resume();
         });
 
         prim.on('relation', async (relation) => {
-            if(r === 0)
-                console.log('  > ' + chalk.yellow('Связи.'));
+            if(rLine === undefined)
+                rLine = console.draft();
             r += relation.length;
+            rLine('  > ' + chalk.yellow('Обработка связей: ') + chalk.green(r));
         });
 
         prim.on('finish', () => {
+            statusLine('* ' + chalk.cyan('Обработка данных OSM...') + chalk.green(' Ok.'));
             resolve();
         });
-    });
-}
-
-function getPointAsGeoJSON(id) {
-    let pt = nodes.get(id);
-    return {
-        id: id,
-        type: "Feature",
-        geometry: {
-            type: "Point", 
-            coordinates: pt
-        }
-    }
-}
-
-function getPointAsCoord(id) {
-    return nodes.get(id);
-}
-
-function buildOsmData() {
-    let peek = (a) => a[a.length - 1];
-    console.log('* ' + chalk.cyan('Подготовка данных OSM.'));
-
-    console.log('  > ' + chalk.yellow('Структурирование.'));
-    ways.forEach((refs, key) => {
-        let obj = {
-            _id: key,
-            vertice: getPointAsGeoJSON(refs[0]),
-            line: {
-                type: "Feature",
-                geometry: {
-                    type: "LineString",
-                    coordinates: []
-                }
-            },
-            points: {
-                first: refs[0],
-                last: peek(refs)
-            }
-        };
-
-        for(let i = 0; i < refs.length; i++) {
-            obj.line.geometry.coordinates.push(
-                getPointAsCoord(refs[i])
-            );
-        }
-
-        osm.set(key, obj);
     });
 }
 
@@ -162,20 +139,19 @@ async function buildGraph() {
     let file = __dirname + '/' + fname;
 
     try {
-        await common.download(
-            '* ' + chalk.cyan('Загрузка '), 
-            'https://needgeo.com/data/current/region/RU/RU-SPE.pbf', 
-            file
-        );
+        // await common.download(
+        //     '* ' + chalk.cyan('Загрузка '), 
+        //     'https://needgeo.com/data/current/region/RU/RU-SPE.pbf', 
+        //     file
+        // );
 
-        //await store.connect();
+        await store.connect();
         // await store.clean();
-        await parse(file);
-        buildOsmData();
+        // await parse(file);
         // await store.buildVertices();
-        //await buildGraph();
-        // if(!module.parent)
-        //     await store.close();
+        await buildGraph();
+        if(!module.parent)
+            await store.close();
         console.log(chalk.green('Готово!'));
     } catch(error) {
         console.log(error.message);

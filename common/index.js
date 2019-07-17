@@ -1,8 +1,11 @@
 'use strict';
 
-const chalk = require('chalk')
-    , http  = require('https')
-    , fs    = require('fs');
+const DraftLog = require('draftlog')
+    , chalk    = require('chalk')
+    , http     = require('https')
+    , fs       = require('fs');
+
+DraftLog(console);
 
 function ProgressBar(prefix = '', progress) {
     progress = Math.min(100, progress)

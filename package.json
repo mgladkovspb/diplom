@@ -9,6 +9,8 @@
     "express-session": "^1.16.2",
     "mongodb": "^3.2.7",
     "nconf": "^0.10.0",
+    "ngraph.graph": "^18.0.0",
+    "ngraph.path": "^1.2.0",
     "protocol-buffers": "^4.1.0",
     "wkx": "^0.4.6"
   }
