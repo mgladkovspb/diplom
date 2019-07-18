@@ -1,7 +1,6 @@
 'use strict';
 
 const path         = require('path')
-    , DraftLog     = require('draftlog')
     , chalk        = require('chalk')
     , store        = require('./store')
     , config       = require('./config')
