@@ -8,9 +8,13 @@
 <body>
     <div id="map"></div>
     <div class="map-control map-control-tr btn-group shadow">
-        <input class="btn" type="button" value="+" onclick="zoomIn();"/>
-        <input class="btn" type="button" value="-" onclick="zoomOut();"/>
+        <input class="btn" type="button" value="+" onclick="osmmap.zoomIn();"/>
+        <input class="btn" type="button" value="-" onclick="osmmap.zoomOut();"/>
     </div>
+    <div class="map-control map-control-tl btn-group shadow">
+        <input class="btn btn-default" type="button" value="Пересчитать маршрут" onclick="onPositionChange(null);"/>
+    </div>
+    <!--
     <div class="map-control map-control-tl sidebar shadow">
         <div class="sidebar-header">
             <h3 id="state" class="text-red">Строю граф...</h3>
@@ -24,8 +28,10 @@
             <span class="checkmark"></span>
         </label>
     </div>
+    -->
     <script src="/lib/jquery/jquery.min.js"></script>
     <script src="/lib/leaflet/leaflet-src.js"></script>
+    <script src="/js/mymap.js"></script>
     <script src="/js/index.js"></script>
 </body>
 </html>

@@ -7,7 +7,14 @@ const chalk       = require('chalk')
 
 let db;
 
+function isConnected() {
+    return !!client && !!client.topology && client.topology.isConnected()
+}
+
 async function connect() {
+    if(isConnected())
+        return;
+
     console.log('* ' + chalk.cyan('Подключение к базе данных...'));
     try {
         await client.connect();
@@ -18,6 +25,9 @@ async function connect() {
 }
 
 async function close() {
+    if(!isConnected())
+        return;
+
     console.log('* ' + chalk.cyan('Отключение от базы данных...'));
     try {
         await client.close();
@@ -56,15 +66,41 @@ async function writeGraph(data) {
     await collection.insertMany(data);
 }
 
-function getGraph() {
+async function getGraph() {
     let collection = db.collection('graph');
-    return collection.find({});
+    return collection.find({}).toArray();
 }
 
-module.exports.writeOsm   = writeOsm;
-module.exports.writeGraph = writeGraph;
-module.exports.getGraph   = getGraph;
-module.exports.connect    = connect;
-module.exports.clean      = clean;
-module.exports.close      = close;
-module.exports.empty      = empty;
+async function create2dIndex() {
+    let collection = db.collection('osm');
+    await collection.createIndex( { 'vertice.geometry' : '2dsphere' } );
+}
+
+async function findEdgesByPoint(point) {
+    let collection = db.collection('osm')
+      , result     = await collection.find({ 
+        'vertice.geometry': { 
+            $near: { 
+                $geometry: point, 
+                $maxDistance: 500 
+            } 
+        } 
+    }).toArray();
+    return result.length === 0 ? undefined : result[0]._id;
+}
+
+async function getEdges(filter) {
+    let collection = db.collection('osm')
+    return await collection.find({ _id: { $in : filter } }).toArray();
+}
+
+module.exports.create2dIndex    = create2dIndex;
+module.exports.writeOsm         = writeOsm;
+module.exports.writeGraph       = writeGraph;
+module.exports.getGraph         = getGraph;
+module.exports.getEdges         = getEdges;
+module.exports.findEdgesByPoint = findEdgesByPoint;
+module.exports.connect          = connect;
+module.exports.clean            = clean;
+module.exports.close            = close;
+module.exports.empty            = empty;

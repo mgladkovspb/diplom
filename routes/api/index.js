@@ -24,18 +24,6 @@ module.exports = function(app) {
             res.send(JSON.stringify(fc));
         })
     });
-
-    app.get('/api/vertices', async (req, res) => {
-        // let fc = { 
-        //     type: "FeatureCollection",
-        //     features: []
-        // };
-
-        // fc.features = await store.getVertices();
-
-        // res.send(JSON.stringify(fc));
-        res.end();
-    });
 }
 
 function loadGraph() {
@@ -53,17 +41,24 @@ function loadGraph() {
     });
 }
 
-/*
-TODO:
-Доделать поиск
-*/
-async function findPath(start, finish) {
-    return new Promise((resolve, reject) => {
-        // let pathFinder = path.aStar(graph)
-        //   , from       = await store.getWayIdFromPoint(start)
-        //   , to         = await store.getWayIdFromPoint(finish)
-        //   , foundPath  = pathFinder.find(from, to);
+function findPath(start, finish) {
+    return new Promise(async (resolve, reject) => {
+        let pathFinder = path.aStar(graph)
+          , from       = await store.findEdgesByPoint(start)
+          , to         = await store.findEdgesByPoint(finish)
+          , foundPath  = [];
 
-        resolve([]);
+        if(from !== undefined && to !== undefined)
+            foundPath = pathFinder.find(from, to)
+
+        let edges = await store.getEdges(foundPath.reduce((accumulator, currentValue) => {
+            accumulator.push(currentValue.id);
+            return accumulator;
+        }, []));
+
+        resolve(edges.reduce((accumulator, currentValue) => {
+            accumulator.push(currentValue.line);
+            return accumulator;
+        }, []));
     });
 }

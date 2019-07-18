@@ -175,22 +175,11 @@ function neighbors(point) {
         await store.writeOsm(Array.from(osm.values()));
         console.log('  > ' + chalk.yellow('Граф.'));
         await store.writeGraph(graph);
-        if(!module.parent)
-            await store.close();
+        console.log('  > ' + chalk.yellow('2D index.'));
+        await store.create2dIndex();
+        await store.close();
         console.log(chalk.green('Готово!'));
     } catch(error) {
         console.log(error.message);
     }
 })();
-
-// запросы для построения графа
-
-/* 
-выбрать все документы с последним элементом массива
-db.ways.find({}, { refs: {$slice: -1}});
-*/
-
-/* 
-выбрать все документы, где первый элемент массива равен значению
-db.ways.find({ 'refs.0': 230424 });
-*/

@@ -23,6 +23,12 @@ body {
     border-radius: 2px;
 }
 
+.btn-default {
+    background-color: #2980b9;
+    color: #ecedee;
+}
+
+
 /* цвета */
 .text-blue {
     color: #2980b9;

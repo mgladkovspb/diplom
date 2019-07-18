@@ -2,78 +2,55 @@
 
 let osmmap, verticesLayer, edgesLayer;
 
-function requestReadyState() {
+function addPath(data) {
+    let myStyle = {
+        "color": "#2c3e50",
+        "weight": 5,
+        "opacity": 0.65
+    };
+
+    osmmap.removeLayer('path');
+    osmmap.addLayer('path', L.geoJSON(data, {
+        style: myStyle
+    }));
+}
+
+function calculatePath(query) {
     $.ajax({
         type: "POST",
-        url: url,
-        data: data,
-        success: success,
-        dataType: dataType
+        url: '/api/calc',
+        contentType: 'application/json',
+        data: JSON.stringify(query),
+        success: addPath,
+        dataType: 'json'
     });
 }
 
-function createMap() {
-    osmmap = L.map('map', {
-        zoomControl: false,
-        maxZoom: 18
-    }).setView([59.940878, 30.334021], 10);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(osmmap);
+function getPointAsGeoJSON(latlng) {
+    return {
+        type: "Point", 
+        coordinates: [latlng.lng, latlng.lat]
+    }
 }
 
-function zoomIn() {
-    osmmap.setZoom(
-        osmmap.getZoom() + 1
-    );
-}
+function onPositionChange(event) {
+    let query = {
+        start: getPointAsGeoJSON(osmmap.getMarker('start').getLatLng()),
+        finish: getPointAsGeoJSON(osmmap.getMarker('finish').getLatLng())
+    };
 
-function zoomOut() {
-    osmmap.setZoom(
-        osmmap.getZoom() - 1
-    );
-}
-
-function loadVertices(data) {
-    let features = JSON.parse(data);
-
-    verticesLayer = L.geoJSON(features, {
-        style: function (feature) {
-            return feature.properties && feature.properties.style;
-        },
-
-        pointToLayer: function (feature, latlng) {
-            return L.circleMarker(latlng, {
-                radius: 4,
-                fillColor: "#ff7800",
-                color: "#000",
-                weight: 1,
-                opacity: 1,
-                fillOpacity: 0.8
-            });
-        }
-    });
+    calculatePath(query);
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    createMap();
-    $('input[name="vertices"]').on('click', (e) => {
-        if(e.target.checked) {
-            if(verticesLayer === undefined) {
-                $.get('/api/vertices', (data) => { 
-                    loadVertices(data);
-                    verticesLayer.addTo(osmmap);
-                });
-            } else {
-                verticesLayer.addTo(osmmap);
-            }
-        } else {
-            osmmap.removeLayer(verticesLayer);
-        }
-    });
+    osmmap = new MyMap();
+    
+    let start  = new L.marker([59.962679, 30.368535], { draggable: 'true' })
+      , finish = new L.marker([59.929566, 30.314861], { draggable: 'true' });
 
-    $('input[name="edges"]').on('click', (e) => {
-        console.log('edges');
-    });
+    start.on('dragend', onPositionChange);
+    finish.on('dragend', onPositionChange);
+
+    osmmap.addMarker('start', start);
+    osmmap.addMarker('finish', finish);
 }, false);

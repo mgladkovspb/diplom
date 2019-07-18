@@ -26,23 +26,14 @@ app.use(session(config.get('session')));
 
 require('./routes')(app);
 
-app.listen(config.get('base:port'), function () {
-    console.log(
-        chalk.cyan('Сервер запущен. Порт: ') + 
-        ' ' + 
-        chalk.green(config.get('base:port'))
-    );
-});
+app.listen(config.get('base:port'), async () => {
+    console.log(chalk.cyan('Сервер запущен. Порт: ') + ' ' + chalk.green(config.get('base:port')));
+    await store.connect();
 
-(async () => {
-    let empty  = await store.empty();
-
+    let empty = await store.empty();
     if(empty) {
         console.log();
         const child = require('child_process');
         child.fork(`${__dirname}/load-osm.js`);
-    } else {
-        DraftLog(console);
-        store.connect();
     }
-})();
+});
