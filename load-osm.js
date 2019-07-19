@@ -98,8 +98,8 @@ function getPointAsCoord(id) {
 
 function buildOsmData() {
     let peek = (a) => a[a.length - 1];
-    console.log('* ' + chalk.cyan('Подготовка данных OSM.'));
 
+    console.log('* ' + chalk.cyan('Подготовка данных OSM.'));
     console.log('  > ' + chalk.yellow('Структурирование.'));
     ways.forEach((refs, key) => {
         let obj = {

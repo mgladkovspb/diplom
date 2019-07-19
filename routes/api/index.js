@@ -27,7 +27,7 @@ module.exports = function(app) {
         findPath(req.body.start, req.body.finish).then(data => {
             fc.features = data;
             res.send(JSON.stringify(fc));
-        })
+        });
     });
 
     app.get('/api/ready', (req, res) => {
@@ -64,7 +64,7 @@ async function loadGraph() {
         graph = undefined;
         console.log(chalk.red(error.message));
     }
-    
+
     if(graph !== undefined) {
         clearInterval(timer);
         ready = true;

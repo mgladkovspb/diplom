@@ -1,29 +1,28 @@
 'use strict';
 
 const DraftLog = require('draftlog')
-    , chalk = require('chalk')
-    , http = require('https')
-    , fs = require('fs');
+    , chalk    = require('chalk')
+    , http     = require('https')
+    , fs       = require('fs');
 
 DraftLog(console);
 
 function ProgressBar(prefix = '', progress) {
-    progress = Math.min(100, progress)
-
+    progress  = Math.min(100, progress)
     let units = Math.round(progress / 2)
     return prefix + chalk.dim('[') + chalk.blue('=').repeat(units) + ' '.repeat(50 - units) + chalk.dim('] ') + chalk.yellow(progress + '%')
 }
 
 function download(message, source, dest) {
     return new Promise((resolve, reject) => {
-        let file = fs.createWriteStream(dest)
-            , request = http.get(source)
-            , barLine = console.draft();
+        let file    = fs.createWriteStream(dest)
+          , request = http.get(source)
+          , barLine = console.draft();
 
         barLine(chalk.cyan('Ожидание...'));
         request.on('response', (response) => {
-            let len = parseInt(response.headers['content-length'], 10)
-                , downloaded = 0;
+            let len        = parseInt(response.headers['content-length'], 10)
+              , downloaded = 0;
 
             response.on('data', (chunk) => {
                 file.write(chunk);
