@@ -71,21 +71,6 @@ async function loadGraph() {
         readyObserver.broadcast();
         readyObserver.clean();
     }
-
-    // store.getGraph().then(data => {
-    //     graph = createGraph();
-    //     data.forEach(element => {
-    //         graph.addLink(
-    //             element.from, 
-    //             element.to, 
-    //             element.data);
-    //     });
-    //     readyObserver.broadcast();
-    //     readyObserver.clean();
-    // }).catch(error => {
-    //     graph = undefined;
-    //     console.log(chalk.red(error.message));
-    // });
 }
 
 async function findPath(start, finish) {
