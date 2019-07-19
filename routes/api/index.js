@@ -8,8 +8,8 @@ const createGraph = require('ngraph.graph')
 
 let readyObserver = new Observer()
   , ready = false
-  , graph
-  , timer;
+  , graph = undefined
+  , timer = undefined;
 
 loadGraph();
 
