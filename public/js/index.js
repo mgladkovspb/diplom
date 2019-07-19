@@ -1,6 +1,21 @@
 'use strict';
 
-let osmmap, verticesLayer, edgesLayer;
+let osmmap;
+
+function checkReadyState() {
+    $.ajax({
+        type: "GET",
+        url: '/api/ready',
+        success: data => {
+            if(!data.ready)
+                return checkReadyState();
+            $('#state').removeClass().addClass('text-green').text('Готово.');
+            onPositionChange(null);
+        },
+        cache: false,
+        dataType: 'json'
+    });
+}
 
 function addPath(data) {
     let myStyle = {
@@ -22,6 +37,7 @@ function calculatePath(query) {
         contentType: 'application/json',
         data: JSON.stringify(query),
         success: addPath,
+        cache: false,
         dataType: 'json'
     });
 }
@@ -53,4 +69,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     osmmap.addMarker('start', start);
     osmmap.addMarker('finish', finish);
+
+    checkReadyState();
 }, false);

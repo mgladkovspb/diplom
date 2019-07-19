@@ -1,9 +1,9 @@
 'use strict';
 
 const DraftLog = require('draftlog')
-    , chalk    = require('chalk')
-    , http     = require('https')
-    , fs       = require('fs');
+    , chalk = require('chalk')
+    , http = require('https')
+    , fs = require('fs');
 
 DraftLog(console);
 
@@ -16,15 +16,15 @@ function ProgressBar(prefix = '', progress) {
 
 function download(message, source, dest) {
     return new Promise((resolve, reject) => {
-        let file    = fs.createWriteStream(dest)
-          , request = http.get(source)
-          , barLine = console.draft();
+        let file = fs.createWriteStream(dest)
+            , request = http.get(source)
+            , barLine = console.draft();
 
         barLine(chalk.cyan('Ожидание...'));
         request.on('response', (response) => {
-            let len        = parseInt(response.headers['content-length'], 10)
-              , downloaded = 0;
-    
+            let len = parseInt(response.headers['content-length'], 10)
+                , downloaded = 0;
+
             response.on('data', (chunk) => {
                 file.write(chunk);
                 downloaded += chunk.length;
@@ -48,4 +48,27 @@ function download(message, source, dest) {
     });
 }
 
+class Observer {
+    constructor() {
+        this.observers = [];
+    }
+
+    subscribe(fn) {
+        this.observers.push(fn);
+    }
+
+    unsubscribe(fn) {
+        this.observers = this.observers.filter(subscriber => subscriber !== fn);
+    }
+
+    broadcast(data) {
+        this.observers.forEach(subscriber => subscriber(data));
+    }
+
+    clean() {
+        this.observers = [];
+    }
+}
+
 module.exports.download = download; 
+module.exports.Observer = Observer;

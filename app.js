@@ -23,11 +23,11 @@ app.use(bodyParser.json())
 app.use(cookieParser());
 app.use(session(config.get('session')));
 
-require('./routes')(app);
-
 app.listen(config.get('base:port'), async () => {
     console.log(chalk.cyan('Сервер запущен. Порт: ') + ' ' + chalk.green(config.get('base:port')));
     await store.connect();
+
+    require('./routes')(app);
 
     let empty = await store.empty();
     if(empty) {
