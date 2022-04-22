@@ -8,7 +8,7 @@
         "express": "^4.17.1",
         "express-session": "^1.16.2",
         "mongodb": "^3.2.7",
-        "nconf": "^0.10.0",
+        "nconf": "^0.11.4",
         "ngraph.graph": "^18.0.0",
         "ngraph.path": "^1.2.0",
         "protocol-buffers": "^4.1.0"
